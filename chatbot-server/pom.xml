@@ -17,6 +17,7 @@
     <maven.compiler.release>17</maven.compiler.release>
     <!-- Dependencies Versions -->
     <pdfbox.version>3.0.2</pdfbox.version>
+    <pgvector.version>0.1.5</pgvector.version>
     <simple-openai.version>3.5.1</simple-openai.version>
     <lombok.version>1.18.32</lombok.version>
     <slf4j.version>2.0.12</slf4j.version>
@@ -31,6 +32,11 @@
         <groupId>org.apache.pdfbox</groupId>
         <artifactId>pdfbox</artifactId>
         <version>${pdfbox.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.pgvector</groupId>
+        <artifactId>pgvector</artifactId>
+        <version>${pgvector.version}</version>
       </dependency>
       <dependency>
         <groupId>io.github.sashirestela</groupId>
@@ -62,7 +68,11 @@
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
     </dependency>
-  <dependency>
+    <dependency>
+      <groupId>com.pgvector</groupId>
+      <artifactId>pgvector</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.github.sashirestela</groupId>
       <artifactId>simple-openai</artifactId>
     </dependency>
