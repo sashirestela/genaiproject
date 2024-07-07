@@ -1,5 +1,7 @@
 package com.encora.genai.ingest;
 
+import static com.encora.genai.support.Commons.getUserInput;
+
 import java.util.List;
 
 import com.encora.genai.data.FragmentResult;
@@ -26,14 +28,6 @@ public class QueryContent {
                     + "Reference: " + fr.getReference() + "\n"
                     + fr.getContent()));
         }
-    }
-
-    private static String getUserInput(String message, String defaultValue) {
-        String input = System.console().readLine(message);
-        if (input == null || input.isBlank()) {
-            input = defaultValue;
-        }
-        return input;
     }
 
 }

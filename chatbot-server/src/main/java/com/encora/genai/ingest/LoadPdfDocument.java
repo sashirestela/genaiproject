@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.encora.genai.data.Fragment;
-import com.encora.genai.support.Constant;
+import com.encora.genai.support.Commons;
 import com.encora.genai.support.Database;
 import com.encora.genai.support.GenerativeAI;
 import com.encora.genai.support.Splitter;
@@ -55,7 +55,7 @@ public class LoadPdfDocument {
         List<String> partialContents = new ArrayList<>();
         for (Fragment fragment : fragments) {
             int partialContentLength = partialContents.stream().mapToInt(String::length).sum();
-            if (partialContentLength + fragment.getContent().length() > Constant.MAX_NUM_CHARS_PER_FRAGMENT) {
+            if (partialContentLength + fragment.getContent().length() > Commons.MAX_NUM_CHARS_PER_FRAGMENT) {
                 embeddings.addAll(GenerativeAI.createEmbeddings(partialContents));
                 partialContents = new ArrayList<>();
                 partialContents.add(fragment.getContent());

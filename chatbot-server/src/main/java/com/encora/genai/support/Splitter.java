@@ -66,10 +66,10 @@ public class Splitter {
     }
 
     private static void addFragment(String previous, String innerText, List<Fragment> fragments) {
-        if (previous.length() + innerText.length() <= Constant.MAX_NUM_CHARS_PER_FRAGMENT) {
+        if (previous.length() + innerText.length() <= Commons.MAX_NUM_CHARS_PER_FRAGMENT) {
             fragments.add(newFragment(previous, innerText));
         } else {
-            int pivotIndex = innerText.lastIndexOf("\n", Constant.MAX_NUM_CHARS_PER_FRAGMENT - previous.length());
+            int pivotIndex = innerText.lastIndexOf("\n", Commons.MAX_NUM_CHARS_PER_FRAGMENT - previous.length());
             fragments.add(newFragment(previous, innerText.substring(0, pivotIndex)));
             addFragment(previous, innerText.substring(pivotIndex + 1), fragments);
         }
