@@ -11,6 +11,8 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.encora.genai.data.Fragment;
+import com.encora.genai.data.FragmentResult;
 import com.pgvector.PGvector;
 
 public class Database {
@@ -27,7 +29,9 @@ public class Database {
 
     public static void prepareDatabase() {
         String extensionSql = "CREATE EXTENSION IF NOT EXISTS vector";
-        String createTableSql = "CREATE TABLE IF NOT EXISTS fragment (id bigserial PRIMARY KEY, content text, embedding vector(1536))";
+        String createTableSql = ""
+                + "CREATE TABLE IF NOT EXISTS fragment "
+                + "(id bigserial PRIMARY KEY, reference text, content text, embedding vector(1536))";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 Statement statement = connection.createStatement();) {
             statement.executeUpdate(extensionSql);
@@ -39,13 +43,14 @@ public class Database {
     }
 
     public static void insertSegments(List<Fragment> fragments) {
-        String insertSql = "INSERT INTO fragment (content, embedding) VALUES (?, ?)";
+        String insertSql = "INSERT INTO fragment (reference, content, embedding) VALUES (?, ?, ?)";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 PreparedStatement insertStmt = connection.prepareStatement(insertSql)) {
             int i = 0;
             for (Fragment fragment : fragments) {
-                insertStmt.setString(1, fragment.getContent());
-                insertStmt.setObject(2, new PGvector(fragment.getEmbedding()));
+                insertStmt.setString(1, fragment.getReference());
+                insertStmt.setString(2, fragment.getContent());
+                insertStmt.setObject(3, new PGvector(fragment.getEmbedding()));
                 insertStmt.executeUpdate();
                 LOGGER.debug("Fragment {} was inserted in database.", ++i);
             }
@@ -55,7 +60,8 @@ public class Database {
     }
 
     public static void indexSegments() {
-        String createIndexSql = "CREATE INDEX IF NOT EXISTS fragment_embedding ON fragment "
+        String createIndexSql = ""
+                + "CREATE INDEX IF NOT EXISTS fragment_embedding ON fragment "
                 + "USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 Statement statement = connection.createStatement();) {
@@ -65,24 +71,31 @@ public class Database {
         }
     }
 
-    public static List<Fragment> selectFragments(List<Double> embedding, int matchCount) {
-        String selectSql = "SELECT id, content FROM fragment ORDER BY embedding <=> ? LIMIT ?";
+    public static List<FragmentResult> selectFragments(List<Double> embedding, double matchThreshold, int matchCount) {
+        String selectSql = ""
+                + "SELECT reference, content, 1 - (embedding <=> ?) as similarity "
+                + "FROM fragment WHERE (embedding <=> ?) < (1 - ?) "
+                + "ORDER BY (embedding <=> ?) LIMIT ?";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
-            selectStmt.setObject(1, new PGvector(embedding));
-            selectStmt.setInt(2, matchCount);
+                    selectStmt.setObject(1, new PGvector(embedding));
+                    selectStmt.setObject(2, new PGvector(embedding));
+                    selectStmt.setDouble(3, matchThreshold);
+                    selectStmt.setObject(4, new PGvector(embedding));
+                    selectStmt.setInt(5, matchCount);
             ResultSet resultSet = selectStmt.executeQuery();
-            List<Fragment> fragments = new ArrayList<>();
+            List<FragmentResult> fragments = new ArrayList<>();
             while (resultSet.next()) {
-                Fragment fragment = Fragment.builder()
-                .id(resultSet.getLong("id"))
-                .content(resultSet.getString("content"))
-                .build();
+                FragmentResult fragment = FragmentResult.builder()
+                        .reference(resultSet.getString("reference"))
+                        .content(resultSet.getString("content"))
+                        .similarity(resultSet.getDouble("similarity"))
+                        .build();
                 fragments.add(fragment);
             }
             return fragments;
         } catch (Exception e) {
-            throw new RuntimeException("Cannot insert a fragment.", e);
+            throw new RuntimeException("Cannot select fragments.", e);
         }
     }
 

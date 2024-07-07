@@ -1,0 +1,3 @@
+mvn exec:java -Dexec.mainClass=com.encora.genai.ingest.LoadPdfDocument -Dexec.args="/projects/genaiproject/documents/constitucion_politica_peru_2024.pdf"
+
+mvn -q exec:java -Dexec.mainClass=com.encora.genai.ingest.QueryContent
