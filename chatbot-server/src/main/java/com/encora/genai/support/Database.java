@@ -37,6 +37,7 @@ public class Database {
             statement.executeUpdate(extensionSql);
             PGvector.addVectorType(connection);
             statement.executeUpdate(createTableSql);
+            LOGGER.debug("The table 'fragment' was created.");
         } catch (Exception e) {
             throw new RuntimeException("Cannot prepare the database.", e);
         }
@@ -66,6 +67,7 @@ public class Database {
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 Statement statement = connection.createStatement();) {
             statement.executeUpdate(createIndexSql);
+            LOGGER.debug("The index 'fragment_embedding' was created.");
         } catch (Exception e) {
             throw new RuntimeException("Cannot create the index.", e);
         }
@@ -93,6 +95,7 @@ public class Database {
                         .build();
                 fragments.add(fragment);
             }
+            LOGGER.debug("{} fragments were selected.", fragments.size());
             return fragments;
         } catch (Exception e) {
             throw new RuntimeException("Cannot select fragments.", e);
