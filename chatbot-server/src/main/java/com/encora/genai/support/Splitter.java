@@ -1,5 +1,6 @@
 package com.encora.genai.support;
 
+import static com.encora.genai.support.Commons.MAX_INDEX_LEVEL;
 import static com.encora.genai.support.Commons.MAX_NUM_CHARS_PER_FRAGMENT;
 import static com.encora.genai.support.Commons.REFERENCE_SEPARATOR;
 
@@ -16,7 +17,6 @@ import com.encora.genai.data.Fragment;
 public class Splitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Splitter.class);
-    private static final int MAX_INDEX_LEVEL = 2;
     private static final String FIELD_SEPARATOR = "\n";
     private static final String LEVEL_JOINNER = " - ";
     private static final String REGEX_TO_CLEAN = "([^A-Z\\.\\:])\\n((?![a-z]\\. )[a-z])";

@@ -43,11 +43,12 @@ public class ChatServer {
         String prompt = ""
                 + "Para responder usa solo la actual conversación y el contexto agregado a cada consulta. "
                 + "Responde a cada consulta y agrega breves detalles, usando un tono didáctico y amable. "
-                + "No inventes respuestas. Si no hay información disponible, dí que sientes no haber "
+                + "No consultes otras fuentes de información más que el contexto de cada consulta y la "
+                + "y la propia conversación. Si no hay información disponible aquí, dí que sientes no haber "
                 + "encontrado información para responder. Responde en el idioma en que te consulten. "
                 + "El contexto lo recibirás en bloques identificados por un ROWID el cuál podrás usarlo "
                 + "como cita si utilizas un bloque de contexto para responder. La cita tendrá la forma "
-                + "[ROWID] y la agregarás como texto final de cada párrafo de tu respuesta.";
+                + "[ROWID] y la agregarás como texto final de cada párrafo de tu respuesta, si existe.";
         SystemMessage message = SystemMessage.of(prompt);
         LOGGER.debug("New chat was required.");
         return message;
@@ -81,9 +82,9 @@ public class ChatServer {
                 + "El usuario y la IA están teniendo una conversación acerca de un documento. "
                 + "Aquí está la transcripción más reciente de la conversación:\n\n"
                 + chatHistory(messages) + "\n\n"
-                + "Reescribe la siguiente consulta del usuario, usando esa conversación como "
-                + "contexto, produciendo una consulta que sea más útil para crear un embedding "
-                + "para búsqueda semántica:\n\n"
+                + "Reescribe la siguiente consulta del usuario, usando la conversación como "
+                + "contexto para aclarar principalmente el sujeto y el objeto de la consulta, "
+                + "y manteniendo el sentido original de la consulta:\n\n"
                 + question;
         Chat chat = GenerativeAI.executeChatCompletion(Arrays.asList(UserMessage.of(prompt)));
         LOGGER.debug("The question was rewriten as: {}", chat.firstContent());
