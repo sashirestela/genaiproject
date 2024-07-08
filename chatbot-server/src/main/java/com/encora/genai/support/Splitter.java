@@ -1,5 +1,8 @@
 package com.encora.genai.support;
 
+import static com.encora.genai.support.Commons.MAX_NUM_CHARS_PER_FRAGMENT;
+import static com.encora.genai.support.Commons.REFERENCE_SEPARATOR;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -15,7 +18,6 @@ public class Splitter {
     private static final Logger LOGGER = LoggerFactory.getLogger(Splitter.class);
     private static final int MAX_INDEX_LEVEL = 2;
     private static final String FIELD_SEPARATOR = "\n";
-    private static final String REFERENCE_SEPARATOR = " || ";
     private static final String LEVEL_JOINNER = " - ";
     private static final String REGEX_TO_CLEAN = "([^A-Z\\.\\:])\\n((?![a-z]\\. )[a-z])";
     private static final String[] REGEX_BY_LEVEL = {
@@ -66,10 +68,10 @@ public class Splitter {
     }
 
     private static void addFragment(String previous, String innerText, List<Fragment> fragments) {
-        if (previous.length() + innerText.length() <= Commons.MAX_NUM_CHARS_PER_FRAGMENT) {
+        if (previous.length() + innerText.length() <= MAX_NUM_CHARS_PER_FRAGMENT) {
             fragments.add(newFragment(previous, innerText));
         } else {
-            int pivotIndex = innerText.lastIndexOf("\n", Commons.MAX_NUM_CHARS_PER_FRAGMENT - previous.length());
+            int pivotIndex = innerText.lastIndexOf("\n", MAX_NUM_CHARS_PER_FRAGMENT - previous.length());
             fragments.add(newFragment(previous, innerText.substring(0, pivotIndex)));
             addFragment(previous, innerText.substring(pivotIndex + 1), fragments);
         }

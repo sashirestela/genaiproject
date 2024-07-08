@@ -25,6 +25,7 @@ public class QueryContent {
             fragments.forEach(fr -> System.out.println(""
                     + "-".repeat(50) + "\n"
                     + "Similaridad: " + fr.getSimilarity() + "\n"
+                    + "RowId: " + fr.getRowid() + "\n"
                     + "Reference: " + fr.getReference() + "\n"
                     + fr.getContent()));
         }

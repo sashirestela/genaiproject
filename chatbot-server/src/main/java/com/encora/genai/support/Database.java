@@ -75,16 +75,16 @@ public class Database {
 
     public static List<FragmentResult> selectFragments(List<Double> embedding, double matchThreshold, int matchCount) {
         String selectSql = ""
-                + "SELECT reference, content, 1 - (embedding <=> ?) as similarity "
-                + "FROM fragment WHERE (embedding <=> ?) < (1 - ?) "
-                + "ORDER BY (embedding <=> ?) LIMIT ?";
+                + "SELECT reference, content, 1 - (embedding <=> ?) AS similarity, "
+                + "row_number() OVER (ORDER BY embedding <=> ?) AS rowid "
+                + "FROM fragment WHERE (embedding <=> ?) < (1 - ?) LIMIT ?";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
-                    selectStmt.setObject(1, new PGvector(embedding));
-                    selectStmt.setObject(2, new PGvector(embedding));
-                    selectStmt.setDouble(3, matchThreshold);
-                    selectStmt.setObject(4, new PGvector(embedding));
-                    selectStmt.setInt(5, matchCount);
+            selectStmt.setObject(1, new PGvector(embedding));
+            selectStmt.setObject(2, new PGvector(embedding));
+            selectStmt.setObject(3, new PGvector(embedding));
+            selectStmt.setDouble(4, matchThreshold);
+            selectStmt.setInt(5, matchCount);
             ResultSet resultSet = selectStmt.executeQuery();
             List<FragmentResult> fragments = new ArrayList<>();
             while (resultSet.next()) {
@@ -92,8 +92,11 @@ public class Database {
                         .reference(resultSet.getString("reference"))
                         .content(resultSet.getString("content"))
                         .similarity(resultSet.getDouble("similarity"))
+                        .rowid(resultSet.getInt("rowid"))
                         .build();
                 fragments.add(fragment);
+                LOGGER.debug("Fragment [rowId:{}, similarity:{}, reference: {}]",
+                        fragment.getRowid(), fragment.getSimilarity(), fragment.getReference());
             }
             LOGGER.debug("{} fragments were selected.", fragments.size());
             return fragments;

@@ -1,7 +1,5 @@
 package com.encora.genai.chat;
 
-import static com.encora.genai.support.Commons.MARK_FOR_REFERENCE;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.encora.genai.data.FragmentResult;
 import com.encora.genai.support.Database;
 import com.encora.genai.support.GenerativeAI;
+import com.encora.genai.support.Quote;
 
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatMessage;
@@ -42,26 +41,27 @@ public class ChatServer {
 
     public SystemMessage getMessageToStartChat() {
         String prompt = ""
-                + "Para responder consultas usa solo el historial de mensajes de la conversación y el "
-                + "contexto que agregue en cada consulta. Responde a la consulta con cierto detalle. "
-                + "No inventes respuestas. Si no hay información para responder, dí que no hallaste "
-                + "información para responder a la consulta. Responde en el idioma en que consulten.";
+                + "Para responder usa solo la actual conversación y el contexto agregado a cada consulta. "
+                + "Responde a cada consulta y agrega breves detalles, usando un tono didáctico y amable. "
+                + "No inventes respuestas. Si no hay información disponible, dí que sientes no haber "
+                + "encontrado información para responder. Responde en el idioma en que te consulten. "
+                + "El contexto lo recibirás en bloques identificados por un ROWID el cuál podrás usarlo "
+                + "como cita si utilizas un bloque de contexto para responder. La cita tendrá la forma "
+                + "[ROWID] y la agregarás como texto final de cada párrafo de tu respuesta.";
         SystemMessage message = SystemMessage.of(prompt);
         LOGGER.debug("New chat was required.");
         return message;
     }
 
     public Stream<String> askQuestionAndGetResponse(List<ChatMessage> messages, String question) {
-        String rewrittenQuestion = messages.size() > 1 ? rewriteQuestion(messages, question) : question;
+        String rewrittenQuestion = rewriteQuestion(messages, question);
         List<Double> questionEmbedding = GenerativeAI.createEmbedding(rewrittenQuestion);
         List<FragmentResult> fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
         String prompt = ""
                 + "Toma en cuenta la siguiente información como contexto:\n\n"
-                + fragments.stream().map(fr -> fr.getReference() + "\n" + fr.getContent())
-                        .collect(Collectors.joining("\n\n"))
+                + fragments.stream().map(FragmentResult::printForContext).collect(Collectors.joining("\n\n"))
                 + "\n\n"
-                + "Si no hay contexto, responde que no hallaste información para responder. "
-                + "Si existe un contexto, usalo para responder la siguiente consulta:\n\n"
+                + "Si hay contexto, úsalo para responder la siguiente consulta:\n\n"
                 + rewrittenQuestion;
         List<ChatMessage> updatedMessages = new ArrayList<>(messages);
         updatedMessages.add(UserMessage.of(prompt));
@@ -72,8 +72,7 @@ public class ChatServer {
         if (fragments.isEmpty()) {
             return response;
         } else {
-            return Stream.concat(response,
-                    Stream.of(MARK_FOR_REFERENCE + fragments.get(0).getReference()));
+            return Stream.concat(response, Stream.of(Quote.serializeForQuotes(fragments)));
         }
     }
 
