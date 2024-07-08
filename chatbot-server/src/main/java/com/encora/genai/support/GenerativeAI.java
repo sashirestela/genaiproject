@@ -27,8 +27,7 @@ public class GenerativeAI {
     private static final Integer EMBEDDING_DIMENSIONS = 1536;
 
     private static final String COMPLETION_MODEL = "gpt-4o";
-    //private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
-    private static final Double COMPLETION_TEMPERATURE = 0.2;
+    private static final Double COMPLETION_TEMPERATURE = 0.1;
 
     static {
         OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");

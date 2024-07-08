@@ -42,13 +42,13 @@ public class ChatServer {
     public SystemMessage getMessageToStartChat() {
         String prompt = ""
                 + "Para responder usa solo la actual conversación y el contexto agregado a cada consulta. "
-                + "Responde a cada consulta y agrega breves detalles, usando un tono didáctico y amable. "
-                + "No consultes otras fuentes de información más que el contexto de cada consulta y la "
-                + "y la propia conversación. Si no hay información disponible aquí, dí que sientes no haber "
+                + "Responde las consultas y agrega breves detalles. Responde con tono didáctico y amable. "
+                + "No busques otras fuentes de información más que el contexto de cada consulta y la "
+                + "propia conversación. Si no hay contexto disponible aquí, dí que lamentas no haber "
                 + "encontrado información para responder. Responde en el idioma en que te consulten. "
-                + "El contexto lo recibirás en bloques identificados por un ROWID el cuál podrás usarlo "
-                + "como cita si utilizas un bloque de contexto para responder. La cita tendrá la forma "
-                + "[ROWID] y la agregarás como texto final de cada párrafo de tu respuesta, si existe.";
+                + "El contexto lo recibirás en bloques identificados con un ROWID el cuál debes usarlo "
+                + "como cita por cada bloque de contexto que uses para responder. La cita tendrá la forma "
+                + "[ROWID] y la insertarás, si existe, en el punto de tu respuesta en donde la usaste.";
         SystemMessage message = SystemMessage.of(prompt);
         LOGGER.debug("New chat was required.");
         return message;
@@ -60,9 +60,8 @@ public class ChatServer {
         List<FragmentResult> fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
         String prompt = ""
                 + "Toma en cuenta la siguiente información como contexto:\n\n"
-                + fragments.stream().map(FragmentResult::printForContext).collect(Collectors.joining("\n\n"))
-                + "\n\n"
-                + "Si hay contexto, úsalo para responder la siguiente consulta:\n\n"
+                + showContextIfExist(fragments) + "\n\n"
+                + "Si existe contexto, úsalo para responder la siguiente consulta:\n\n"
                 + rewrittenQuestion;
         List<ChatMessage> updatedMessages = new ArrayList<>(messages);
         updatedMessages.add(UserMessage.of(prompt));
@@ -89,6 +88,13 @@ public class ChatServer {
         Chat chat = GenerativeAI.executeChatCompletion(Arrays.asList(UserMessage.of(prompt)));
         LOGGER.debug("The question was rewriten as: {}", chat.firstContent());
         return chat.firstContent();
+    }
+
+    private String showContextIfExist(List<FragmentResult> fragments) {
+        String context = fragments.stream()
+                .map(fr -> fr.getRowid() + "\n" + fr.getContent())
+                .collect(Collectors.joining("\n\n"));
+        return context.isEmpty() ? "(No existe contexto)" : context;
     }
 
     private String chatHistory(List<ChatMessage> messages) {

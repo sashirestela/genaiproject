@@ -23,8 +23,4 @@ public class FragmentResult {
         return lastPart;
     }
 
-    public String printForContext() {
-        return rowid + "\n" + content;
-    }
-
 }
