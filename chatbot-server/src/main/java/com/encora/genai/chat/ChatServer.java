@@ -25,7 +25,7 @@ public class ChatServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatServer.class);
 
     private static final Double MATCH_THRESHOLD = 0.45;
-    private static final Integer MATCH_COUNT = 3;
+    private static final Integer MATCH_COUNT = 4;
 
     private static ChatServer chatServer = null;
 
@@ -104,7 +104,7 @@ public class ChatServer {
 
     private String showContextIfExist(List<FragmentResult> fragments) {
         String context = fragments.stream()
-                .map(fr -> fr.getRowid() + "\n" + fr.lastPartReference() + " : " + fr.getContent())
+                .map(fr -> fr.getRowid() + "\n" + fr.getContent())
                 .collect(Collectors.joining("\n\n"));
         return context.isEmpty() ? "(No existe información)" : context;
     }

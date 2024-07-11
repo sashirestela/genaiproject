@@ -54,7 +54,7 @@ public class ChatClient {
             if (!serializedQuotes.isEmpty()) {
                 System.out.print("\n\n");
                 Map<String, String> matchedQuotes = Quote.matchQuotes(response.toString(), serializedQuotes.toString());
-                matchedQuotes.forEach((rowid, reference) -> System.out.println("[" + rowid + "] : " + reference));
+                matchedQuotes.forEach((rowid, reference) -> System.out.println("[" + rowid + "] " + reference));
             }
             System.out.print("\n\n");
             messages.add(UserMessage.of(userQuestion));

@@ -15,13 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.encora.genai.data.Fragment;
-import com.encora.genai.data.FragmentResult;
 
 public class Splitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Splitter.class);
     private static final String LEVEL_JOINNER = " - ";
-    private static final String CONTENT_SEPRATOR = " : ";
     private static final String REGEX_TO_CLEAN = "([^A-Z\\.\\:])\\n((?![a-z]\\. )[a-z])";
     private static final String[] REGEX_BY_LEVEL = {
             "(PRE.MBULO|T.TULO.*\\n.*|DISPOSICIONES.*|DECLARACI.N.*\\n.*)",
@@ -81,13 +79,12 @@ public class Splitter {
     }
 
     private static Fragment newFragment(String previous, String innerText) {
-        FragmentResult fr = FragmentResult.builder()
+        Fragment fragment = Fragment.builder()
                 .reference(previous.replaceAll(FIELD_SEPARATOR_REGEX + "$", ""))
+                .content(innerText)
                 .build();
-        return Fragment.builder()
-                .reference(fr.getReference())
-                .content(fr.lastPartReference() + CONTENT_SEPRATOR + innerText)
-                .build();
+        fragment.updateContentWithReference();
+        return fragment;
     }
 
 }

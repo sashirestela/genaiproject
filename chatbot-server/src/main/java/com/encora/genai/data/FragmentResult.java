@@ -1,7 +1,6 @@
 package com.encora.genai.data;
 
-import static com.encora.genai.support.Commons.START_TEXT_FOR_LAST_PART;
-import static com.encora.genai.support.Commons.FIELD_SEPARATOR_REGEX;
+import static com.encora.genai.support.Commons.CONTENT_SEPARATOR;
 
 import lombok.Builder;
 import lombok.Data;
@@ -15,11 +14,7 @@ public class FragmentResult {
     private Double similarity;
     private Integer rowid;
 
-    public String lastPartReference() {
-        String[] parts = reference.split(FIELD_SEPARATOR_REGEX, 0);
-        String candidateLastPart = parts[parts.length - 1];
-        String lastPart = candidateLastPart.startsWith(START_TEXT_FOR_LAST_PART) ? candidateLastPart : reference;
-        return lastPart;
+    public String getContentHeader() {
+        return content.split(CONTENT_SEPARATOR, 0)[0];
     }
-
 }

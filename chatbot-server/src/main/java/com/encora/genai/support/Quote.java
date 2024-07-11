@@ -27,8 +27,9 @@ public class Quote {
     }
 
     public static String serializeForQuotes(List<FragmentResult> fragments) {
-        String serialized = MARK_FOR_QUOTE + fragments.stream().map(fr -> fr.getRowid() + COL_SEPARATOR + fr.lastPartReference())
-        .collect(Collectors.joining(ROW_SEPARATOR));
+        String serialized = MARK_FOR_QUOTE + fragments.stream()
+                .map(fr -> fr.getRowid() + COL_SEPARATOR + fr.getContentHeader())
+                .collect(Collectors.joining(ROW_SEPARATOR));
         LOGGER.debug("Serialized text: {}", serialized);
         return serialized;
     }
