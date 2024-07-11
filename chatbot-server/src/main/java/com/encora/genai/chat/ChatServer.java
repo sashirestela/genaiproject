@@ -41,14 +41,25 @@ public class ChatServer {
 
     public SystemMessage getMessageToStartChat() {
         String prompt = ""
-                + "Para responder usa solo la actual conversación y el contexto agregado a cada consulta. "
+                + "Para responder usa la conversación y principalmente el contexto agregado a cada consulta. "
                 + "Responde las consultas y agrega breves detalles. Responde con tono didáctico y amable. "
                 + "No busques otras fuentes de información más que el contexto de cada consulta y la "
-                + "propia conversación. Si no hay contexto disponible aquí, dí que lamentas no haber "
-                + "encontrado información para responder. Responde en el idioma en que te consulten. "
-                + "El contexto lo recibirás en bloques identificados con un ROWID el cuál debes usarlo "
-                + "como cita por cada bloque de contexto que uses para responder. La cita tendrá la forma "
-                + "[ROWID] y la insertarás, si existe, en el punto de tu respuesta en donde la usaste.";
+                + "propia conversación. Si no hay información disponible aquí, dí que lamentas no haber "
+                + "encontrado información para responder. Responde en el idioma en que te consulten.\n\n"
+                + "Las consultas las recibirás de la siguiente forma:\n\n"
+                + "   Toma en cuenta la siguiente información:\n\n"
+                + "   1\n"
+                + "   Los perros ladran y son animales domésticos.\n\n"
+                + "   2\n"
+                + "   Los gatos maullan y son animales domésticos.\n\n"
+                + "   3\n"
+                + "   Los caballos relinchan, y no son animales domésticos.\n\n"
+                + "   Si existe información, úsala para responder la siguiente consulta:\n\n"
+                + "   qué aninales ladran o maullan?\n\n"
+                + "Si usas algunos de los bloque para responder a la consulta, debes agregar el número "
+                + "encima de cada bloque al final de tu respuesta, de la siguiente forma:\n\n"
+                + "   El animal que ladra es el perro[1]. El animal que maulla es el gato[2]. Ambos animales "
+                + "   son domésticos.'";
         SystemMessage message = SystemMessage.of(prompt);
         LOGGER.debug("New chat was required.");
         return message;
@@ -59,14 +70,15 @@ public class ChatServer {
         List<Double> questionEmbedding = GenerativeAI.createEmbedding(rewrittenQuestion);
         List<FragmentResult> fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
         String prompt = ""
-                + "Toma en cuenta la siguiente información como contexto:\n\n"
+                + "Toma en cuenta la siguiente información:\n\n"
                 + showContextIfExist(fragments) + "\n\n"
-                + "Si existe contexto, úsalo para responder la siguiente consulta:\n\n"
+                + "Si existe información, úsala para responder la siguiente consulta:\n\n"
                 + rewrittenQuestion;
         List<ChatMessage> updatedMessages = new ArrayList<>(messages);
         updatedMessages.add(UserMessage.of(prompt));
         Stream<Chat> chatStream = GenerativeAI.executeSreamChatCompletion(updatedMessages);
-        Stream<String> response = chatStream.filter(chat -> !chat.getChoices().isEmpty() && chat.firstContent() != null)
+        Stream<String> response = chatStream
+                .filter(chat -> !chat.getChoices().isEmpty() && chat.firstContent() != null)
                 .map(Chat::firstContent);
         LOGGER.debug("A response was received.");
         if (fragments.isEmpty()) {
@@ -78,12 +90,12 @@ public class ChatServer {
 
     private String rewriteQuestion(List<ChatMessage> messages, String question) {
         String prompt = ""
-                + "El usuario y la IA están teniendo una conversación acerca de un documento. "
-                + "Aquí está la transcripción más reciente de la conversación:\n\n"
+                + "El usuario está haciendo preguntas sobre la Constitución Política del Perú. "
+                + "Aquí está la transcripción cronológica de todas sus preguntas:\n\n"
                 + chatHistory(messages) + "\n\n"
-                + "Reescribe la siguiente consulta del usuario, usando la conversación como "
-                + "contexto para aclarar principalmente el sujeto y el objeto de la consulta, "
-                + "y manteniendo el sentido original de la consulta:\n\n"
+                + "Reescribe la siguiente consulta, usando el historial de preguntas anteriores "
+                + "como contexto para aclarar principalmente el sujeto y el objeto de la consulta."
+                + "Debes mantener el sentido original de la consulta:\n\n"
                 + question;
         Chat chat = GenerativeAI.executeChatCompletion(Arrays.asList(UserMessage.of(prompt)));
         LOGGER.debug("The question was rewriten as: {}", chat.firstContent());
@@ -92,14 +104,14 @@ public class ChatServer {
 
     private String showContextIfExist(List<FragmentResult> fragments) {
         String context = fragments.stream()
-                .map(fr -> fr.getRowid() + "\n" + fr.getContent())
+                .map(fr -> fr.getRowid() + "\n" + fr.lastPartReference() + " : " + fr.getContent())
                 .collect(Collectors.joining("\n\n"));
-        return context.isEmpty() ? "(No existe contexto)" : context;
+        return context.isEmpty() ? "(No existe información)" : context;
     }
 
     private String chatHistory(List<ChatMessage> messages) {
         return messages.stream()
-                .filter(msg -> !(msg instanceof SystemMessage))
+                .filter(msg -> (msg instanceof UserMessage))
                 .map(msg -> {
                     String chatEntry = msg.getRole().name() + ": ";
                     if (msg instanceof AssistantMessage) {

@@ -20,8 +20,10 @@ public class Database {
     private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
     private static final String JDBC_URL;
 
+    private static final int BATCH_SIZE = 500;
+
     static {
-        JDBC_URL = System.getenv("JDBC_URL");
+        JDBC_URL = System.getenv("JDBC_URL") + "&reWriteBatchedInserts=true";
     }
 
     private Database() {
@@ -29,13 +31,15 @@ public class Database {
 
     public static void prepareDatabase() {
         String extensionSql = "CREATE EXTENSION IF NOT EXISTS vector";
+        String dropTableSql = "DROP TABLE IF EXISTS fragment";
         String createTableSql = ""
-                + "CREATE TABLE IF NOT EXISTS fragment "
-                + "(id bigserial PRIMARY KEY, reference text, content text, embedding vector(1536))";
+                + "CREATE TABLE IF NOT EXISTS fragment (id bigserial PRIMARY KEY, "
+                + "reference text, content text, embedding vector(1536))";
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 Statement statement = connection.createStatement();) {
             statement.executeUpdate(extensionSql);
             PGvector.addVectorType(connection);
+            statement.executeUpdate(dropTableSql);
             statement.executeUpdate(createTableSql);
             LOGGER.debug("The table 'fragment' was created.");
         } catch (Exception e) {
@@ -48,13 +52,23 @@ public class Database {
         try (Connection connection = DriverManager.getConnection(JDBC_URL);
                 PreparedStatement insertStmt = connection.prepareStatement(insertSql)) {
             int i = 0;
+            int b = 0;
+            connection.setAutoCommit(false);
             for (Fragment fragment : fragments) {
                 insertStmt.setString(1, fragment.getReference());
                 insertStmt.setString(2, fragment.getContent());
                 insertStmt.setObject(3, new PGvector(fragment.getEmbedding()));
-                insertStmt.executeUpdate();
-                LOGGER.debug("Fragment {} was inserted in database.", ++i);
+                insertStmt.addBatch();
+                if (++i % BATCH_SIZE == 0) {
+                    insertStmt.executeBatch();
+                    connection.commit();
+                    b++;
+                    LOGGER.debug("{} fragments were inserted in database.", BATCH_SIZE);
+                }
             }
+            insertStmt.executeBatch();
+            connection.commit();
+            LOGGER.debug("{} fragments were inserted in database.", i - b * BATCH_SIZE);
         } catch (Exception e) {
             throw new RuntimeException("Cannot insert a fragment.", e);
         }

@@ -1,7 +1,7 @@
 package com.encora.genai.data;
 
-import static com.encora.genai.support.Commons.MAX_INDEX_LEVEL;
-import static com.encora.genai.support.Commons.REFERENCE_SEPARATOR_FOR_SPLIT;
+import static com.encora.genai.support.Commons.START_TEXT_FOR_LAST_PART;
+import static com.encora.genai.support.Commons.FIELD_SEPARATOR_REGEX;
 
 import lombok.Builder;
 import lombok.Data;
@@ -16,10 +16,9 @@ public class FragmentResult {
     private Integer rowid;
 
     public String lastPartReference() {
-        String[] parts = reference.split(REFERENCE_SEPARATOR_FOR_SPLIT, 0);
-        String lastPart = parts.length > MAX_INDEX_LEVEL
-            ? parts[parts.length - 1]
-            : reference;
+        String[] parts = reference.split(FIELD_SEPARATOR_REGEX, 0);
+        String candidateLastPart = parts[parts.length - 1];
+        String lastPart = candidateLastPart.startsWith(START_TEXT_FOR_LAST_PART) ? candidateLastPart : reference;
         return lastPart;
     }
 

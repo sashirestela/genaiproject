@@ -26,7 +26,7 @@ public class GenerativeAI {
     private static final String EMBEDDING_MODEL = "text-embedding-3-small";
     private static final Integer EMBEDDING_DIMENSIONS = 1536;
 
-    private static final String COMPLETION_MODEL = "gpt-4o";
+    private static final String COMPLETION_MODEL = "gpt-3.5-turbo-0125";
     private static final Double COMPLETION_TEMPERATURE = 0.1;
 
     static {

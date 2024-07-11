@@ -2,7 +2,9 @@ package com.encora.genai.support;
 
 import static com.encora.genai.support.Commons.MAX_INDEX_LEVEL;
 import static com.encora.genai.support.Commons.MAX_NUM_CHARS_PER_FRAGMENT;
-import static com.encora.genai.support.Commons.REFERENCE_SEPARATOR;
+import static com.encora.genai.support.Commons.EMPTY;
+import static com.encora.genai.support.Commons.FIELD_SEPARATOR;
+import static com.encora.genai.support.Commons.FIELD_SEPARATOR_REGEX;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,12 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.encora.genai.data.Fragment;
+import com.encora.genai.data.FragmentResult;
 
 public class Splitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Splitter.class);
-    private static final String FIELD_SEPARATOR = "\n";
     private static final String LEVEL_JOINNER = " - ";
+    private static final String CONTENT_SEPRATOR = " : ";
     private static final String REGEX_TO_CLEAN = "([^A-Z\\.\\:])\\n((?![a-z]\\. )[a-z])";
     private static final String[] REGEX_BY_LEVEL = {
             "(PRE.MBULO|T.TULO.*\\n.*|DISPOSICIONES.*|DECLARACI.N.*\\n.*)",
@@ -46,13 +49,13 @@ public class Splitter {
         String[] innerTexts = text.split(REGEX_BY_LEVEL[level], 0);
         String firstText = innerTexts[0];
         if (!firstText.isBlank()) {
-            splitOrAdd(level, previous, "", firstText, fragments);
+            splitOrAdd(level, previous, EMPTY, firstText, fragments);
         }
         for (int i = 1; i < innerTexts.length; i++) {
             String innerText = innerTexts[i];
             String levelText = levelMatcher.find()
                     ? levelMatcher.group().trim().replaceAll("\\n", LEVEL_JOINNER)
-                    : "";
+                    : EMPTY;
             splitOrAdd(level, previous, levelText, innerText, fragments);
         }
     }
@@ -78,9 +81,12 @@ public class Splitter {
     }
 
     private static Fragment newFragment(String previous, String innerText) {
+        FragmentResult fr = FragmentResult.builder()
+                .reference(previous.replaceAll(FIELD_SEPARATOR_REGEX + "$", ""))
+                .build();
         return Fragment.builder()
-                .reference(previous.trim().replaceAll(FIELD_SEPARATOR, REFERENCE_SEPARATOR))
-                .content(innerText)
+                .reference(fr.getReference())
+                .content(fr.lastPartReference() + CONTENT_SEPRATOR + innerText)
                 .build();
     }
 
