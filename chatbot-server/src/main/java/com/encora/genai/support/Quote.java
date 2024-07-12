@@ -1,5 +1,9 @@
 package com.encora.genai.support;
 
+import static com.encora.genai.support.Commons.COL_SEPARATOR;
+import static com.encora.genai.support.Commons.ROW_SEPARATOR;
+import static com.encora.genai.support.Commons.START_MARKER;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,19 +19,15 @@ public class Quote {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Quote.class);
 
-    private static final String MARK_FOR_QUOTE = "~~";
-    private static final String COL_SEPARATOR = "¬";
-    private static final String ROW_SEPARATOR = "Ç";
-
     private Quote() {
     }
 
     public static boolean isQuote(String probableQuote) {
-        return probableQuote.contains(MARK_FOR_QUOTE);
+        return probableQuote.contains(START_MARKER);
     }
 
     public static String serializeForQuotes(List<FragmentResult> fragments) {
-        String serialized = MARK_FOR_QUOTE + fragments.stream()
+        String serialized = START_MARKER + fragments.stream()
                 .map(fr -> fr.getRowid() + COL_SEPARATOR + fr.getContentHeader())
                 .collect(Collectors.joining(ROW_SEPARATOR));
         LOGGER.debug("Serialized text: {}", serialized);
@@ -44,7 +44,7 @@ public class Quote {
 
     private static Map<String, String> deserialize(String serializedQuote) {
         Map<String, String> map = new HashMap<>();
-        String cleanedSerializedQuote = serializedQuote.substring(MARK_FOR_QUOTE.length());
+        String cleanedSerializedQuote = serializedQuote.substring(START_MARKER.length());
         StringTokenizer tokenizer = new StringTokenizer(cleanedSerializedQuote, ROW_SEPARATOR);
         while (tokenizer.hasMoreTokens()) {
             String token = tokenizer.nextToken();

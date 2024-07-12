@@ -22,8 +22,8 @@ public class ChatClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatClient.class);
 
-    private static final String USER_INPUT_MESSAGE = "ESCRIBE TU CONSULTA: ";
-    private static final String ASSISTANT_MESSAGE = "RESPUESTA DEL BOT: ";
+    private static final String USER_INPUT_MESSAGE = "CONSULTA: ";
+    private static final String ASSISTANT_MESSAGE = "RESPUESTA: ";
 
     private List<ChatMessage> messages;
 

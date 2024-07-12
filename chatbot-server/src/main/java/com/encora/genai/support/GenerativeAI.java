@@ -1,5 +1,10 @@
 package com.encora.genai.support;
 
+import static com.encora.genai.support.Commons.COMPLETION_MODEL;
+import static com.encora.genai.support.Commons.COMPLETION_TEMPERATURE;
+import static com.encora.genai.support.Commons.EMBEDDING_DIMENSIONS;
+import static com.encora.genai.support.Commons.EMBEDDING_MODEL;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -22,12 +27,6 @@ public class GenerativeAI {
 
     private static final String OPENAI_API_KEY;
     private static final SimpleOpenAI OPENAI;
-
-    private static final String EMBEDDING_MODEL = "text-embedding-3-small";
-    private static final Integer EMBEDDING_DIMENSIONS = 1536;
-
-    private static final String COMPLETION_MODEL = "gpt-3.5-turbo-0125";
-    private static final Double COMPLETION_TEMPERATURE = 0.1;
 
     static {
         OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");

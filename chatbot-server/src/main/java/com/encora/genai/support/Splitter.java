@@ -1,10 +1,13 @@
 package com.encora.genai.support;
 
 import static com.encora.genai.support.Commons.MAX_INDEX_LEVEL;
-import static com.encora.genai.support.Commons.MAX_NUM_CHARS_PER_FRAGMENT;
+import static com.encora.genai.support.Commons.MAX_NUM_CHARS;
+import static com.encora.genai.support.Commons.TO_CLEAN_REGEX;
+import static com.encora.genai.support.Commons.BY_LEVEL_REGEX;
 import static com.encora.genai.support.Commons.EMPTY;
 import static com.encora.genai.support.Commons.FIELD_SEPARATOR;
 import static com.encora.genai.support.Commons.FIELD_SEPARATOR_REGEX;
+import static com.encora.genai.support.Commons.LEVEL_JOINNER;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,13 +22,6 @@ import com.encora.genai.data.Fragment;
 public class Splitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Splitter.class);
-    private static final String LEVEL_JOINNER = " - ";
-    private static final String REGEX_TO_CLEAN = "([^A-Z\\.\\:])\\n((?![a-z]\\. )[a-z])";
-    private static final String[] REGEX_BY_LEVEL = {
-            "(PRE.MBULO|T.TULO.*\\n.*|DISPOSICIONES.*|DECLARACI.N.*\\n.*)",
-            "(CAP.TULO.*\\n.*|\\n?[A-Z][a-záéíóúñ]*\\.-\\s)",
-            "(Art.culo.*\\.--|Art.culo.*\\.*)"
-    };
 
     public static List<Fragment> splitByRegex(String text) {
         List<Fragment> fragments = new ArrayList<>();
@@ -35,16 +31,16 @@ public class Splitter {
     }
 
     public static String cleanText(String text) {
-        Pattern pattern = Pattern.compile(REGEX_TO_CLEAN);
+        Pattern pattern = Pattern.compile(TO_CLEAN_REGEX);
         Matcher matcher = pattern.matcher(text);
         String cleanedText = matcher.replaceAll("$1 $2");
         return cleanedText;
     }
 
     private static void splitTextByRegex(int level, String previous, String text, List<Fragment> fragments) {
-        Pattern pattern = Pattern.compile(REGEX_BY_LEVEL[level]);
+        Pattern pattern = Pattern.compile(BY_LEVEL_REGEX[level]);
         Matcher levelMatcher = pattern.matcher(text);
-        String[] innerTexts = text.split(REGEX_BY_LEVEL[level], 0);
+        String[] innerTexts = text.split(BY_LEVEL_REGEX[level], 0);
         String firstText = innerTexts[0];
         if (!firstText.isBlank()) {
             splitOrAdd(level, previous, EMPTY, firstText, fragments);
@@ -69,10 +65,10 @@ public class Splitter {
     }
 
     private static void addFragment(String previous, String innerText, List<Fragment> fragments) {
-        if (previous.length() + innerText.length() <= MAX_NUM_CHARS_PER_FRAGMENT) {
+        if (previous.length() + innerText.length() <= MAX_NUM_CHARS) {
             fragments.add(newFragment(previous, innerText));
         } else {
-            int pivotIndex = innerText.lastIndexOf("\n", MAX_NUM_CHARS_PER_FRAGMENT - previous.length());
+            int pivotIndex = innerText.lastIndexOf("\n", MAX_NUM_CHARS - previous.length());
             fragments.add(newFragment(previous, innerText.substring(0, pivotIndex)));
             addFragment(previous, innerText.substring(pivotIndex + 1), fragments);
         }

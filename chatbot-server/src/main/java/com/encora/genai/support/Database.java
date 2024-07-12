@@ -1,5 +1,7 @@
 package com.encora.genai.support;
 
+import static com.encora.genai.support.Commons.BATCH_SIZE;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -18,9 +20,8 @@ import com.pgvector.PGvector;
 public class Database {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Database.class);
-    private static final String JDBC_URL;
 
-    private static final int BATCH_SIZE = 500;
+    private static final String JDBC_URL;
 
     static {
         JDBC_URL = System.getenv("JDBC_URL") + "&reWriteBatchedInserts=true";

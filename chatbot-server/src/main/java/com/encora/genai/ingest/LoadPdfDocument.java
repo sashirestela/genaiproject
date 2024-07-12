@@ -55,7 +55,7 @@ public class LoadPdfDocument {
         List<String> partialContents = new ArrayList<>();
         for (Fragment fragment : fragments) {
             int partialContentLength = partialContents.stream().mapToInt(String::length).sum();
-            if (partialContentLength + fragment.getContent().length() > Commons.MAX_NUM_CHARS_PER_FRAGMENT) {
+            if (partialContentLength + fragment.getContent().length() > Commons.MAX_NUM_CHARS) {
                 embeddings.addAll(GenerativeAI.createEmbeddings(partialContents));
                 partialContents = new ArrayList<>();
                 partialContents.add(fragment.getContent());
