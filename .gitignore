@@ -13,3 +13,5 @@ dependency-reduced-pom.xml
 .flattened-pom.xml
 .factorypath
 *.log
+
+node_modules/

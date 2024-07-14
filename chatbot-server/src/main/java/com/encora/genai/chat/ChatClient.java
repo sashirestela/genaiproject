@@ -32,9 +32,9 @@ public class ChatClient {
     }
 
     public void startChat() {
-        SystemMessage message = ChatServer.one().getMessageToStartChat();
+        SystemMessage message = ChatServer.one().getSystemMessage();
         messages.add(message);
-        LOGGER.debug("New chat client was started.");
+        LOGGER.debug("New chat was started.");
 
         String userQuestion;
 

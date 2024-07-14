@@ -3,3 +3,4 @@ mvn exec:java -Dexec.mainClass=com.encora.genai.ingest.LoadPdfDocument -Dexec.ar
 mvn exec:java -Dexec.mainClass=com.encora.genai.ingest.QueryContent
 
 mvn exec:java -Dexec.mainClass=com.encora.genai.chat.ChatApplication
+mvn exec:java -Dexec.mainClass=com.encora.genai.app.WebApplication

@@ -45,10 +45,8 @@ public class ChatServer {
         return chatServer;
     }
 
-    public SystemMessage getMessageToStartChat() {
-        SystemMessage message = SystemMessage.of(PROMPT_SYSTEM);
-        LOGGER.debug("New chat was required with the prompt system:\n{}", PROMPT_SYSTEM);
-        return message;
+    public SystemMessage getSystemMessage() {
+        return SystemMessage.of(PROMPT_SYSTEM);
     }
 
     public Stream<String> askQuestionAndGetResponse(List<ChatMessage> messages, String question) {
