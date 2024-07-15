@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   sendButton.addEventListener('click', handleMessageSend);
   messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
+      e.preventDefault();
       handleMessageSend();
     }
   });
