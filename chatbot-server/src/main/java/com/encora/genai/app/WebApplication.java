@@ -1,10 +1,14 @@
 package com.encora.genai.app;
 
 import static com.encora.genai.support.Commons.HTTP_PORT;
+import static com.encora.genai.support.Commons.MIMETYPE_PDF;
 import static com.encora.genai.support.Commons.THREAD_POOL_SIZE;
+import static com.encora.genai.support.Commons.UPLOAD_FOLDER;
 import static com.encora.genai.support.Commons.inputStreamToString;
 import static com.encora.genai.support.Commons.replacePlaceholders;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -18,12 +22,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Stream;
 
+import org.apache.commons.fileupload2.core.DiskFileItemFactory;
+import org.apache.commons.fileupload2.core.FileItem;
+import org.apache.commons.fileupload2.core.RequestContext;
+import org.apache.commons.fileupload2.jakarta.servlet6.JakartaServletFileUpload;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.encora.genai.chat.ChatServer;
+import com.encora.genai.ingest.LoadPdfDocument;
 import com.encora.genai.support.Quote;
 import com.encora.genai.transfer.ChatClientRequest;
+import com.encora.genai.util.HttpHandlerRequestContext;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -43,6 +54,7 @@ public class WebApplication {
     public WebApplication() throws IOException {
         httpServer = HttpServer.create(new InetSocketAddress(HTTP_PORT), 0);
         httpServer.createContext("/chat", new ChatHandler());
+        httpServer.createContext("/upload", new UploadHandler());
     }
 
     public void start() {
@@ -53,6 +65,53 @@ public class WebApplication {
 
     public void stop() {
         httpServer.stop(0);
+    }
+
+    public static class UploadHandler implements HttpHandler {
+
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            if (handleCorsAndCheckIfOptionsWasCalled(exchange)) {
+                return;
+            }
+            String method = exchange.getRequestMethod();
+            if (method.equalsIgnoreCase("POST")) {
+                try {
+                    RequestContext context = new HttpHandlerRequestContext(exchange);
+                    DiskFileItemFactory factory = DiskFileItemFactory.builder().get();
+                    JakartaServletFileUpload upload = new JakartaServletFileUpload(factory);
+
+                    List<FileItem> items = upload.parseRequest(context);
+                    for (FileItem item : items) {
+                        if (!item.isFormField() && MIMETYPE_PDF.equals(item.getContentType())) {
+                            String fileName = item.getName();
+                            String fullFileName = UPLOAD_FOLDER + fileName;
+                            File file = new File(fullFileName);
+                            try (InputStream input = item.getInputStream();
+                                    FileOutputStream output = new FileOutputStream(file)) {
+                                IOUtils.copy(input, output);
+                            }
+                            LoadPdfDocument loader = new LoadPdfDocument();
+                            loader.process(fullFileName);
+                            String response = "File uploaded successfully: " + fileName;
+                            exchange.sendResponseHeaders(HttpURLConnection.HTTP_OK, response.getBytes().length);
+                            exchange.getResponseBody().write(response.getBytes());
+                            exchange.close();
+                            return;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    String response = "Error processing upload: " + e.getMessage();
+                    exchange.sendResponseHeaders(HttpURLConnection.HTTP_INTERNAL_ERROR, response.getBytes().length);
+                    exchange.getResponseBody().write(response.getBytes());
+                    exchange.close();
+                }
+            } else {
+                exchange.sendResponseHeaders(HttpURLConnection.HTTP_BAD_METHOD, -1);
+            }
+        }
     }
 
     public static class ChatHandler implements HttpHandler {
@@ -129,6 +188,7 @@ public class WebApplication {
             exchange.sendResponseHeaders(HttpURLConnection.HTTP_BAD_METHOD, responseError.length);
             exchange.getResponseBody().write(responseError);
         }
+
     }
 
     private static boolean handleCorsAndCheckIfOptionsWasCalled(HttpExchange exchange) throws IOException {
