@@ -36,6 +36,13 @@ public class LoadPdfDocument {
     public LoadPdfDocument() {
     }
 
+    public void process(String fullFileName) throws IOException {
+        String fullText = readPdf(fullFileName);
+        List<Fragment> fragments = cleanAndSplitText(fullText);
+        List<List<Double>> embeddings = generateEmbeddings(fragments);
+        saveFragments(fragments, embeddings);
+    }
+
     public String readPdf(String fileName) throws IOException {
         try (PDDocument document = Loader.loadPDF(new RandomAccessReadBufferedFile(fileName))) {
             PDFTextStripper pdfStripper = new PDFTextStripper();

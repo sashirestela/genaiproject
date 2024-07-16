@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageInput = document.getElementById('message-input');
   const sendButton = document.getElementById('send-button');
   const chatBox = document.getElementById('chat-box');
+  const uploadButton = document.getElementById('upload-button');
+  const pdfInput = document.getElementById('pdf-input');
+  const leftPanel = document.getElementById('left-panel');
+
+  const chatAction = 'chat';
+  const uploadAction = 'upload';
 
   let messages = [];
   let concatenatedData = '';
@@ -20,13 +26,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  uploadButton.addEventListener('click', () => {
+    pdfInput.click();
+  });
+
+  pdfInput.addEventListener('change', handlePDFUpload);
+
   function handleMessageSend() {
     const message = messageInput.value.trim();
     if (message) {
       const request = { question: message, messages: messages };
       addMessageToChat(message, 'user');
       messageInput.value = '';
-      showLoader();
+      showLoader(chatAction);
 
       const source = new SSE(`${hostUrl}/chat`, {
         method: 'POST',
@@ -47,8 +59,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function handlePDFUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+      showLoader(uploadAction);
+      const formData = new FormData();
+      formData.append('pdf', file);
+
+      fetch(`${hostUrl}/upload`, {
+        method: 'POST',
+        body: formData
+      })
+        //.then(response => response.json())
+        .then(data => {
+          console.log('File uploaded successfully:', data);
+          hideLoader(uploadAction);
+        })
+        .catch(error => {
+          console.error('Error uploading file:', error);
+          hideLoader(uploadAction);
+        });
+    }
+  }
+
   function onOpen(event) {
-    hideLoader();
+    hideLoader(chatAction);
   }
 
   function onDelta(event) {
@@ -75,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function onError(event) {
     console.error('SSE Error:', event);
-    hideLoader();
+    hideLoader(chatAction);
   }
 
   function addMessageToChat(message, sender) {
@@ -124,17 +159,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function showLoader() {
+  function showLoader(action) {
     const loaderElement = document.createElement('div');
-    loaderElement.classList.add('loader');
-    chatBox.appendChild(loaderElement);
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (action === 'chat') {
+      loaderElement.classList.add('loader-chat');
+      chatBox.appendChild(loaderElement);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    } else if (action == 'upload') {
+      loaderElement.classList.add('loader-upload');
+      leftPanel.appendChild(loaderElement);
+    }
   }
 
-  function hideLoader() {
-    const loaderElement = document.querySelector('.loader');
+  function hideLoader(action) {
+    const loaderElement = document.querySelector('.loader-chat, .loader-upload');
     if (loaderElement) {
-      chatBox.removeChild(loaderElement);
+      if (action === 'chat') {
+        chatBox.removeChild(loaderElement);
+      } else if (action == 'upload') {
+        leftPanel.removeChild(loaderElement);
+      }
     }
   }
 });

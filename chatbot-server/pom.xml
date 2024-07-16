@@ -20,6 +20,9 @@
     <pgvector.version>0.1.5</pgvector.version>
     <simple-openai.version>3.5.1</simple-openai.version>
     <lombok.version>1.18.32</lombok.version>
+    <servlet.version>6.1.0</servlet.version>
+    <comm-fileupload.version>2.0.0-M2</comm-fileupload.version>
+    <comm-io.version>2.16.1</comm-io.version>
     <slf4j.version>2.0.12</slf4j.version>
     <!-- Plugins Versions -->
     <compiler.version>3.12.1</compiler.version>
@@ -48,6 +51,21 @@
         <artifactId>lombok</artifactId>
         <version>${lombok.version}</version>
         <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.servlet</groupId>
+        <artifactId>jakarta.servlet-api</artifactId>
+        <version>${servlet.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-fileupload2-jakarta-servlet6</artifactId>
+        <version>${comm-fileupload.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${comm-io.version}</version>
       </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
@@ -79,6 +97,18 @@
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-fileupload2-jakarta-servlet6</artifactId>
+  </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
