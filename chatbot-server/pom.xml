@@ -26,7 +26,7 @@
     <slf4j.version>2.0.12</slf4j.version>
     <!-- Plugins Versions -->
     <compiler.version>3.12.1</compiler.version>
-    <exec.version>3.2.0</exec.version>
+    <exec.version>3.3.0</exec.version>
   </properties>
 
   <dependencyManagement>
