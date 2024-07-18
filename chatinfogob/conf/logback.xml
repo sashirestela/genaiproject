@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender" level="OFF">
+    <encoder>
+      <pattern>[%d{ISO8601}]-[%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="CHATINFOGOB_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>chatinfogob.log</file>
+    <append>false</append>
+    <encoder>
+      <pattern>[%d{ISO8601}]-[%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="SIMPLEOPENAI_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>simple-openai.log</file>
+    <append>false</append>
+    <encoder>
+      <pattern>[%d{ISO8601}]-[%thread] %-5level %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+  </root>
+
+  <logger name="com.encora.genai" level="DEBUG">
+    <appender-ref ref="CHATINFOGOB_FILE" />
+  </logger>
+
+  <logger name="io.github.sashirestela.cleverclient" level="DEBUG">
+    <appender-ref ref="SIMPLEOPENAI_FILE" />
+  </logger>
+
+</configuration>
