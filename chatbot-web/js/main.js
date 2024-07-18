@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         body: formData
       })
-        //.then(response => response.json())
         .then(data => {
           console.log('File uploaded successfully:', data);
           hideLoader(uploadAction);
@@ -87,8 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function onDelta(event) {
-    const delta = event.data.replace(/(\r\n|\n|\r)/g, '<br>');
-    concatenatedData += delta;
+    concatenatedData += event.data;
     updateConcatenatedMessage(concatenatedData);
   }
 
