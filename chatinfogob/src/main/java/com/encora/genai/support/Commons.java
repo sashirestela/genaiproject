@@ -13,8 +13,6 @@ public class Commons {
     private Commons() {
     }
 
-    public static final Integer HTTP_PORT = PropertyLoader.getInteger("app.http.port");
-    public static final Integer THREAD_POOL_SIZE = PropertyLoader.getInteger("app.thread.pool.size");
     public static final String MIMETYPE_PDF = PropertyLoader.getString("app.mimetype.pdf");
     public static final String UPLOAD_FOLDER = PropertyLoader.getString("app.upload.folder");
 
