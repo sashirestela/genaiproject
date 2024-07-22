@@ -30,7 +30,7 @@
     <appender-ref ref="CHATINFOGOB_FILE" />
   </logger>
 
-  <logger name="io.github.sashirestela.cleverclient" level="DEBUG">
+  <logger name="io.github.sashirestela.cleverclient" level="INFO">
     <appender-ref ref="SIMPLEOPENAI_FILE" />
   </logger>
 

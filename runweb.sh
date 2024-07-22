@@ -14,6 +14,6 @@ echo ' / /___/ / / / /_/ / /__/ // / / / __/ /_/ / /_/ / /_/ / /_/ /  /_____/   
 echo ' \____/_/ /_/\__,_/\__/___/_/ /_/_/  \____/\____/\____/_.___/             |__/|__/\___/_.___/ '
 echo -e "${RESET}"
 
-cd chatbot-web
+cd chatinfogob-web
 
-npm start | sed "/^> chatbot-web/,/^Default File Extension/d"
+npm start | sed "/^> chatinfogob-web/,/^Default File Extension/d"
