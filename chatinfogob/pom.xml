@@ -20,7 +20,7 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Dependency Versions -->
-    <jooby.version>3.2.5</jooby.version>
+    <jooby.version>3.2.6</jooby.version>
     <pdfbox.version>3.0.2</pdfbox.version>
     <pgvector.version>0.1.5</pgvector.version>
     <simple-openai.version>3.5.1</simple-openai.version>

@@ -98,7 +98,7 @@ public class ChatInfoGobWeb {
 
     private static void send(ServerSentEmitter sse, String event, String data, boolean isForHtml) {
         String newData = isForHtml ? data.replaceAll("\\r\\n|\\n|\\r", "<br>") : data;
-        sse.send(" " + event, " " + newData);
+        sse.send(event, newData);
     }
 
 }
