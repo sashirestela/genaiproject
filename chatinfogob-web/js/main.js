@@ -13,12 +13,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const chatAction = 'chat';
   const uploadAction = 'upload';
+  const MAX_NUM_RETRIES = 2;
 
   let messages = [];
   let concatenatedData = '';
   let concatenatedQuote = '';
+  let numHits = 0;
 
   sendButton.addEventListener('click', handleMessageSend);
+
   messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -33,30 +36,37 @@ document.addEventListener('DOMContentLoaded', () => {
   pdfInput.addEventListener('change', handlePDFUpload);
 
   function handleMessageSend() {
-    const message = messageInput.value.trim();
-    if (message) {
-      const request = { question: message, messages: messages };
+    let message = '';
+    if (numHits == 0) {
+      message = messageInput.value.trim();
+      if (!message) {
+        return;
+      }
       addMessageToChat(message, 'user');
       messageInput.value = '';
-      showLoader(chatAction);
-
-      const source = new SSE(`${hostUrl}/chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        payload: JSON.stringify(request)
-      });
-
-      source.addEventListener('open', onOpen);
-      source.addEventListener('delta', onDelta);
-      source.addEventListener('quote', onQuote);
-      source.addEventListener('chatmessage', onChatMessage);
-      source.addEventListener('done', onDone);
-      source.addEventListener('error', onError);
-
-      source.stream();
+    } else {
+      message = getLastMessageFrom('user');
     }
+    showLoader(chatAction);
+    const request = { question: message, messages: messages };
+    numHits++;
+
+    const source = new SSE(`${hostUrl}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      payload: JSON.stringify(request)
+    });
+
+    source.addEventListener('open', onOpen);
+    source.addEventListener('delta', onDelta);
+    source.addEventListener('quote', onQuote);
+    source.addEventListener('chatmessage', onChatMessage);
+    source.addEventListener('done', onDone);
+    source.addEventListener('error', onError);
+
+    source.stream();
   }
 
   function handlePDFUpload(event) {
@@ -104,11 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
     cleanConcatenatedMessage();
     concatenatedData = '';
     concatenatedQuote = '';
+    numHits = 0;
   }
 
   function onError(event) {
-    console.error('SSE Error:', event);
+    console.error('Error receiving response:', event);
     hideLoader(chatAction);
+    if (numHits == MAX_NUM_RETRIES) {
+      numHits = 0;
+    } else {
+      handleMessageSend();
+    }
   }
 
   function addMessageToChat(message, sender) {
@@ -119,8 +135,13 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
+  function getLastMessageFrom(sender) {
+    const element = document.querySelectorAll('.message.' + sender + ':last-child');
+    return element[0].innerText;
+  }
+
   function updateConcatenatedMessage(message) {
-    let existingMessage = document.querySelector('.message.bot-concat');
+    const existingMessage = document.querySelector('.message.bot-concat');
     if (existingMessage) {
       existingMessage.innerHTML = message;
     } else {
