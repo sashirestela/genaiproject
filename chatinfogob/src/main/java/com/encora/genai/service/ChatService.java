@@ -2,10 +2,11 @@ package com.encora.genai.service;
 
 import static com.encora.genai.support.Commons.MATCH_COUNT;
 import static com.encora.genai.support.Commons.MATCH_THRESHOLD;
-import static com.encora.genai.support.Commons.PROMPT_ENHANCED_QUESTION;
+import static com.encora.genai.support.Commons.PROMPT_NO_CONTEXT;
 import static com.encora.genai.support.Commons.PROMPT_REWRITE_QUESTION;
 import static com.encora.genai.support.Commons.PROMPT_SYSTEM;
-import static com.encora.genai.support.Commons.PROMPT_WITHOUT_INFORMATION;
+import static com.encora.genai.support.Commons.TEMPLATE_CONTEXT_FRAGMENT;
+import static com.encora.genai.support.Commons.TEMPLATE_ENHANCED_QUESTION;
 import static com.encora.genai.support.Commons.replacePlaceholders;
 
 import java.util.ArrayList;
@@ -53,8 +54,8 @@ public class ChatService {
         String rewrittenQuestion = rewriteQuestion(messages, question);
         List<Double> questionEmbedding = GenerativeAI.createEmbedding(rewrittenQuestion);
         List<FragmentResult> fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
-        String prompt = replacePlaceholders(PROMPT_ENHANCED_QUESTION, Map.of(
-                "contextForQuestion", showContextIfExist(fragments),
+        String prompt = replacePlaceholders(TEMPLATE_ENHANCED_QUESTION, Map.of(
+                "contextForQuestion", generateContext(fragments),
                 "rewrittenQuestion", rewrittenQuestion));
         List<ChatMessage> updatedMessages = new ArrayList<>(messages);
         updatedMessages.add(UserMessage.of(prompt));
@@ -78,11 +79,12 @@ public class ChatService {
         return chat.firstContent();
     }
 
-    private String showContextIfExist(List<FragmentResult> fragments) {
+    private String generateContext(List<FragmentResult> fragments) {
         String context = fragments.stream()
-                .map(fr -> fr.getRowid() + "\n" + fr.getContent())
-                .collect(Collectors.joining("\n\n"));
-        return context.isEmpty() ? PROMPT_WITHOUT_INFORMATION : context;
+                .map(fr -> replacePlaceholders(TEMPLATE_CONTEXT_FRAGMENT,
+                        Map.of("id", fr.getRowid().toString(), "contenido", fr.getContent())))
+                .collect(Collectors.joining("\n"));
+        return context.isEmpty() ? PROMPT_NO_CONTEXT : context;
     }
 
     private String chatHistory(List<ChatMessage> messages) {
