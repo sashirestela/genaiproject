@@ -9,6 +9,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,6 +113,32 @@ public class Database {
                 fragments.add(fragment);
                 LOGGER.debug("Fragment [rowId:{}, similarity:{}, reference: {}]",
                         fragment.getRowid(), fragment.getSimilarity(), fragment.getReference());
+            }
+            LOGGER.debug("{} fragments were selected.", fragments.size());
+            return fragments;
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot select fragments.", e);
+        }
+    }
+
+    public static List<FragmentResult> selectFragments(List<Integer> articles) {
+        String selectSql = ""
+                + "SELECT reference, content, row_number() OVER (ORDER BY content) AS rowid "
+                + "FROM fragment WHERE to_tsvector(reference) @@ to_tsquery(?)";
+        String articlesExpression = articles.stream().map(String::valueOf).collect(Collectors.joining("|"));
+        try (Connection connection = DriverManager.getConnection(JDBC_URL);
+                PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+            selectStmt.setString(1, articlesExpression);
+            ResultSet resultSet = selectStmt.executeQuery();
+            List<FragmentResult> fragments = new ArrayList<>();
+            while (resultSet.next()) {
+                FragmentResult fragment = FragmentResult.builder()
+                        .reference(resultSet.getString("reference"))
+                        .content(resultSet.getString("content"))
+                        .rowid(resultSet.getInt("rowid"))
+                        .build();
+                fragments.add(fragment);
+                LOGGER.debug("Fragment [rowId:{}, reference: {}]", fragment.getRowid(), fragment.getReference());
             }
             LOGGER.debug("{} fragments were selected.", fragments.size());
             return fragments;

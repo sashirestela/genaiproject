@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.sashirestela.openai.SimpleOpenAI;
+import io.github.sashirestela.openai.common.tool.Tool;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatMessage;
 import io.github.sashirestela.openai.domain.chat.ChatRequest;
@@ -63,11 +64,12 @@ public class GenerativeAI {
         return response;
     }
 
-    public static Chat executeChatCompletion(List<ChatMessage> messages) {
+    public static Chat executeChatCompletion(List<ChatMessage> messages, List<Tool> tools) {
         ChatRequest request = ChatRequest.builder()
                 .model(COMPLETION_MODEL)
                 .temperature(COMPLETION_TEMPERATURE)
                 .messages(messages)
+                .tools(tools)
                 .build();
         Chat response = OPENAI.chatCompletions().create(request).join();
         LOGGER.debug("Chat Completion was executed.");

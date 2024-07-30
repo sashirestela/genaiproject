@@ -49,9 +49,9 @@ public class Commons {
                     Map.of("contextForQuestion", SAMPLE_CONTEXT, "rewrittenQuestion", SAMPLE_QUESTION)));
     public static final String SAMPLE_ANSWER = PropertyLoader.addSpacer(PropertyLoader.getString("sample.answer"));
 
-    public static final String PROMPT_SYSTEM = PropertyLoader.getString("prompt.system",
+    public static final String PROMPT_MAIN_STEP_SYSTEM = PropertyLoader.getString("prompt.main_step.system",
             Map.of("sampleEnhancedQuestion", SAMPLE_ENHANCED_QUESTION, "sampleAnswer", SAMPLE_ANSWER));
-    public static final String PROMPT_REWRITE_QUESTION = PropertyLoader.getString("prompt.rewrite_question");
+    public static final String PROMPT_PREV_STEP_SYSTEM = PropertyLoader.getString("prompt.prev_step.system");
     public static final String PROMPT_NO_CONTEXT = PropertyLoader.getString("prompt.no_context");
 
     public static final String TEMPLATE_ENHANCED_QUESTION = PropertyLoader.getString("template.enhanced_question");
