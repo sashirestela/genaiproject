@@ -3,8 +3,8 @@ package com.encora.genai.service;
 import static com.encora.genai.support.Commons.MATCH_COUNT;
 import static com.encora.genai.support.Commons.MATCH_THRESHOLD;
 import static com.encora.genai.support.Commons.PROMPT_NO_CONTEXT;
-import static com.encora.genai.support.Commons.PROMPT_REWRITE_QUESTION;
-import static com.encora.genai.support.Commons.PROMPT_SYSTEM;
+import static com.encora.genai.support.Commons.PROMPT_PREV_STEP_SYSTEM;
+import static com.encora.genai.support.Commons.PROMPT_MAIN_STEP_SYSTEM;
 import static com.encora.genai.support.Commons.TEMPLATE_CONTEXT_FRAGMENT;
 import static com.encora.genai.support.Commons.TEMPLATE_ENHANCED_QUESTION;
 import static com.encora.genai.support.Commons.replacePlaceholders;
@@ -20,10 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.encora.genai.data.FragmentResult;
+import com.encora.genai.functions.GetContentByArticles;
 import com.encora.genai.support.Database;
 import com.encora.genai.support.GenerativeAI;
 import com.encora.genai.support.Quote;
 
+import io.github.sashirestela.openai.common.function.FunctionCall;
+import io.github.sashirestela.openai.common.function.FunctionDef;
+import io.github.sashirestela.openai.common.function.FunctionExecutor;
 import io.github.sashirestela.openai.domain.chat.Chat;
 import io.github.sashirestela.openai.domain.chat.ChatMessage;
 import io.github.sashirestela.openai.domain.chat.ChatMessage.AssistantMessage;
@@ -35,6 +39,7 @@ public class ChatService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChatService.class);
 
     private static ChatService chatService = null;
+    private static FunctionExecutor executor = null;
 
     private ChatService() {
     }
@@ -42,41 +47,65 @@ public class ChatService {
     public static ChatService one() {
         if (chatService == null) {
             chatService = new ChatService();
+            executor = new FunctionExecutor();
+            executor.enrollFunction(FunctionDef.builder()
+                    .name(GetContentByArticles.class.getSimpleName())
+                    .functionalClass(GetContentByArticles.class)
+                    .description(GetContentByArticles.DESCRIPTION)
+                    .build());
         }
         return chatService;
     }
 
     public SystemMessage getSystemMessage() {
-        return SystemMessage.of(PROMPT_SYSTEM);
+        return SystemMessage.of(PROMPT_MAIN_STEP_SYSTEM);
     }
 
+    @SuppressWarnings("unchecked")
     public Stream<String> askQuestionAndGetResponse(List<ChatMessage> messages, String question) {
-        String rewrittenQuestion = rewriteQuestion(messages, question);
-        List<Double> questionEmbedding = GenerativeAI.createEmbedding(rewrittenQuestion);
-        List<FragmentResult> fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
-        String prompt = replacePlaceholders(TEMPLATE_ENHANCED_QUESTION, Map.of(
+        String rewrittenQuestion = null;
+        List<FragmentResult> fragments = null;
+        Chat previousStep = runPreviousStep(messages, question, executor);
+        
+        if (getTypeResponse(previousStep) == TypeResponse.QUESTION_WAS_REWRITTEN) {
+            rewrittenQuestion = previousStep.firstContent();
+            List<Double> questionEmbedding = GenerativeAI.createEmbedding(rewrittenQuestion);
+            fragments = Database.selectFragments(questionEmbedding, MATCH_THRESHOLD, MATCH_COUNT);
+        } else {
+            rewrittenQuestion = question;
+            FunctionCall functionCall = previousStep.firstMessage().getToolCalls().get(0).getFunction();
+            fragments = (List<FragmentResult>) executor.execute(functionCall);
+        }
+
+        String enhancedQuestion = replacePlaceholders(TEMPLATE_ENHANCED_QUESTION, Map.of(
                 "contextForQuestion", generateContext(fragments),
                 "rewrittenQuestion", rewrittenQuestion));
         List<ChatMessage> updatedMessages = new ArrayList<>(messages);
-        updatedMessages.add(UserMessage.of(prompt));
+        updatedMessages.add(UserMessage.of(enhancedQuestion));
         Stream<Chat> chatStream = GenerativeAI.executeSreamChatCompletion(updatedMessages);
         Stream<String> response = chatStream
                 .filter(chat -> !chat.getChoices().isEmpty() && chat.firstContent() != null)
                 .map(Chat::firstContent);
         LOGGER.debug("A response was received.");
-        if (fragments.isEmpty()) {
-            return response;
+
+        if (getTypeResponse(previousStep) == TypeResponse.QUESTION_WAS_REWRITTEN) {
+            if (fragments.isEmpty()) {
+                return response;
+            } else {
+                return Stream.concat(response, Stream.of(Quote.serializeForQuotes(fragments)));
+            }
         } else {
-            return Stream.concat(response, Stream.of(Quote.serializeForQuotes(fragments)));
+            return response;
         }
     }
 
-    private String rewriteQuestion(List<ChatMessage> messages, String question) {
-        String prompt = replacePlaceholders(PROMPT_REWRITE_QUESTION, Map.of(
-                "chatHistory", chatHistory(messages), "originalQuestion", question));
-        Chat chat = GenerativeAI.executeChatCompletion(Arrays.asList(UserMessage.of(prompt)));
-        LOGGER.debug("The question was rewriten as: {}", chat.firstContent());
-        return chat.firstContent();
+    private Chat runPreviousStep(List<ChatMessage> messages, String question, FunctionExecutor executor) {
+        String systemPrompt = replacePlaceholders(PROMPT_PREV_STEP_SYSTEM,
+                Map.of("chatHistory", chatHistory(messages)));
+        List<ChatMessage> prevStepMessages = Arrays.asList(SystemMessage.of(systemPrompt), UserMessage.of(question));
+        Chat chat = GenerativeAI.executeChatCompletion(prevStepMessages, executor.getToolFunctions());
+        LOGGER.debug("The previous step was ran: a) the question was rewritten, or b) articles were detected.");
+        return chat;
     }
 
     private String generateContext(List<FragmentResult> fragments) {
@@ -100,6 +129,19 @@ public class ChatService {
                     return chatEntry;
                 })
                 .collect(Collectors.joining("\n"));
+    }
+
+    private TypeResponse getTypeResponse(Chat response) {
+        if (response.getChoices().get(0).getFinishReason().equals("tool_calls")) {
+            return TypeResponse.ARTICLES_WERE_DETECTED;
+        } else {
+            return TypeResponse.QUESTION_WAS_REWRITTEN;
+        }
+    }
+
+    static enum TypeResponse {
+        QUESTION_WAS_REWRITTEN,
+        ARTICLES_WERE_DETECTED;
     }
 
 }
