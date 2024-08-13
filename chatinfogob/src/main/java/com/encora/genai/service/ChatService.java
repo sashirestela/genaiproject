@@ -88,14 +88,10 @@ public class ChatService {
                 .map(Chat::firstContent);
         LOGGER.debug("A response was received.");
 
-        if (getTypeResponse(previousStep) == TypeResponse.QUESTION_WAS_REWRITTEN) {
-            if (fragments.isEmpty()) {
-                return response;
-            } else {
-                return Stream.concat(response, Stream.of(Quote.serializeForQuotes(fragments)));
-            }
-        } else {
+        if (fragments.isEmpty()) {
             return response;
+        } else {
+            return Stream.concat(response, Stream.of(Quote.serializeForQuotes(fragments)));
         }
     }
 
